@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" href="https://drive.google.com/uc?export=view&id=1yFWhmRAqvuhdoLXqA065-jY9FbCSotWt">
+  </head>
+
+<!-- アプリのように全画面表示するための設定を追加 -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#f4f7f6">
+
+<title>まるゐとバス時刻表</title>
+<style>
+  /* 全体のデザイン設定 */
+  body {
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    background-color: #f4f7f6;
+    margin: 0;
+    padding: 16px;
+    padding-top: env(safe-area-inset-top, 16px); /* iPhoneのノッチ対応 */
+    color: #333;
+  }
+  h1 {
+    font-size: 1.3rem;
+    text-align: center;
+    color: #2c3e50;
+    margin-bottom: 20px;
+  }
+
+  /* 検索パネル（絞り込み機能）のデザイン */
+  .search-panel {
+    background: #fff;
+    padding: 16px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .input-group {
+    display: flex;
+    flex-direction: column;
+  }
+  label {
+    font-size: 0.9rem;
+    font-weight: bold;
+    color: #555;
+    margin-bottom: 6px;
+  }
+  select, input[type="time"] {
+    padding: 12px;
+    font-size: 1rem;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    background-color: #fafafa;
+    outline: none;
+    -webkit-appearance: none;
+    font-family: inherit;
+  }
+  select:focus, input[type="time"]:focus {
+    border-color: #007aff;
+    background-color: #fff;
+  }
+  button {
+    padding: 12px;
+    font-size: 1rem;
+    font-weight: bold;
+    color: #007aff;
+    background-color: transparent;
+    border: 1px solid #007aff;
+    border-radius: 6px;
+    cursor: pointer;
+    margin-top: 4px;
+    transition: background-color 0.2s;
+  }
+  button:hover {
+    background-color: #f0f8ff;
+  }
+
+  .time-input-wrapper {
+    display: flex;
+    gap: 8px;
+  }
+  #search-time {
+    flex: 1;
+  }
+  #now-btn {
+    margin-top: 0;
+    padding: 0 16px;
+    font-size: 0.9rem;
+  }
+
+  /* 表を横スクロール可能にする枠 */
+  .table-container {
+    overflow-x: auto;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 500px;
+  }
+  th, td {
+    padding: 14px 12px;
+    text-align: center;
+    border-bottom: 1px solid #eeeeee;
+    font-size: 1.05rem; 
+  }
+  th {
+    background-color: #007aff;
+    color: white;
+    white-space: nowrap;
+  }
+  td:first-child {
+    text-align: left;
+    font-weight: bold;
+    background-color: #f2f2f2; /* 薄いグレイに変更 */
+    position: sticky;
+    left: 0;
+    border-right: 2px solid #e0e0e0;
+    z-index: 1;
+  }
+  .gray-row td {
+    background-color: #f2f2f2;
+  }
+  tr:hover td {
+    background-color: #f1f8ff !important;
+  }
+</style>
+</head>
+<body>
+
+<h1>まるゐとバス時刻表</h1>
+
+<div class="search-panel">
+  <div class="input-group">
+    <label for="day-type">曜日</label>
+    <select id="day-type">
+      <option value="weekday">平日</option>
+      <option value="weekend">土日祝日</option>
+    </select>
+  </div>
+  
+  <div class="input-group">
+    <label for="direction">行き／帰り</label>
+    <select id="direction">
+      <option value="outbound">行き（前原／前原駅発）</option>
+      <option value="inbound">帰り（まるゐと発）</option>
+    </select>
+  </div>
+  
+  <div class="input-group">
+    <label for="search-time">出発時刻</label>
+    <div class="time-input-wrapper">
+      <input type="time" id="search-time">
+      <button type="button" id="now-btn">現在時刻</button>
+    </div>
+  </div>
+  
+  <button id="search-btn" type="button">この条件で検索</button>
+  <button id="reset-btn" type="button" style="border-color: #ccc; color: #555; margin-top: 8px;">条件をリセット</button>
+</div>
+
+<div class="table-container" id="result-container" style="display: none;">
+  <h2 id="result-title" style="font-size: 1.1rem; color: #007aff; text-align: center; margin-top: 10px; margin-bottom: 10px;"></h2>
+  <table>
+    <thead id="result-head">
+    </thead>
+    <tbody id="result-body">
+    </tbody>
+  </table>
+  <div id="no-result-msg" style="display: none; padding: 20px; text-align: center; color: #d9534f; font-weight: bold;">
+    指定した時間以降のバスは本日はもうありません。
+  </div>
+</div>
+
+<script>
+  function timeToMinutes(timeStr) {
+    if (!timeStr || timeStr === "-") return 0;
+    const [hours, minutes] = timeStr.split(':').map(Number);
+    return hours * 60 + minutes;
+  }
+
+  // 路線ごとのデータ定義
+  const routeDefinitions = [
+    {
+      shortName: "野北",
+      stops: ["前原駅北口", "交流プラザ志摩館北口"],
+      weekdayDown: [
+        ["9:00", "10:30", "11:35", "13:05", "14:35", "16:05"], // 前原駅北口
+        ["9:12", "10:42", "11:47", "13:17", "14:47", "16:17"]  // 交流プラザ志摩館北口
+      ],
+      weekdayUp: [
+        ["11:00", "12:30", "13:30", "15:00", "16:30", "18:00"], // 前原駅北口
+        ["10:47", "12:17", "13:17", "14:47", "16:17", "17:47"]  // 交流プラザ志摩館北口
+      ],
+      weekendDown: [
+        ["9:05", "10:25", "11:35", "13:05", "14:35", "15:55"], // 前原駅北口
+        ["9:17", "10:37", "11:47", "13:17", "14:47", "16:07"]  // 交流プラザ志摩館北口
+      ],
+      weekendUp: [
+        ["11:00", "12:30", "13:30", "15:00", "16:30", "18:00"], // 前原駅北口
+        ["10:47", "12:17", "13:17", "14:47", "16:17", "17:47"]  // 交流プラザ志摩館北口
+      ]
+    },
+    {
+      shortName: "船越",
+      stops: ["前原駅北口", "初"],
+      weekdayDown: [
+        ["7:45", "9:35", "11:05", "13:20", "14:50", "16:35", "17:55", "19:25"], // 前原駅北口
+        ["8:02", "9:52", "11:22", "13:37", "15:07", "16:52", "18:12", "19:42"]  // 初
+      ],
+      weekdayUp: [
+        ["7:32", "9:07", "10:52", "12:22", "14:37", "16:07", "17:52", "19:12"], // 前原駅北口
+        ["7:14", "8:49", "10:34", "12:04", "14:19", "15:49", "17:34", "18:54"]  // 初
+      ],
+      weekendDown: [
+        ["7:45", "9:35", "11:05", "13:20", "14:50", "16:35", "18:00"], // 前原駅北口
+        ["8:02", "9:52", "11:22", "13:37", "15:07", "16:52", "18:17"]  // 初
+      ],
+      weekendUp: [
+        ["7:32", "9:07", "10:52", "12:22", "14:37", "16:07", "17:52"], // 前原駅北口
+        ["7:14", "8:49", "10:34", "12:04", "14:19", "15:49", "17:34"]  // 初
+      ]
+    },
+    {
+      shortName: "いと",
+      stops: ["前原（いと・しま号）", "志摩中央公園前"],
+      weekdayDown: [
+        ["8:41", "9:31", "10:11", "11:11", "12:11", "13:11", "14:11", "15:11", "16:11", "17:11", "17:54", "18:24", "18:54", "19:12", "19:22", "19:52", "20:11", "20:41", "21:30", "22:30", "23:30"], // 前原
+        ["8:51", "9:41", "10:21", "11:21", "12:21", "13:21", "14:21", "15:21", "16:21", "17:21", "18:05", "18:35", "19:04", "19:23", "19:33", "20:03", "20:21", "20:51", "21:40", "22:40", "23:40"]  // 志摩中央公園前
+      ],
+      weekdayUp: [
+        ["6:05", "6:30", "6:50", "7:10", "7:20", "7:30", "7:40", "8:00", "8:15", "8:30", "9:00", "9:20", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "15:40", "16:10", "16:40", "17:10", "17:40", "18:00", "19:35", "20:35", "21:35"], // 前原
+        ["5:54", "6:19", "6:39", "6:59", "7:09", "7:19", "7:29", "7:49", "8:04", "8:19", "8:49", "9:09", "9:49", "10:49", "11:49", "12:49", "13:49", "14:49", "15:29", "15:59", "16:29", "16:59", "17:29", "17:49", "19:24", "20:24", "21:24"]  // 志摩中央公園前
+      ],
+      weekendDown: [
+        ["8:41", "11:11", "13:11", "14:11", "15:11", "16:11", "17:11", "18:11", "19:11", "20:11", "20:55", "21:55", "22:55"], // 前原
+        ["8:51", "11:21", "13:21", "14:21", "15:21", "16:21", "17:21", "18:21", "19:21", "20:21", "21:05", "22:05", "23:05"]  // 志摩中央公園前
+      ],
+      weekendUp: [
+        ["6:05", "6:30", "7:00", "7:45", "8:00", "8:45", "9:00", "10:00", "11:00", "12:00", "13:00", "16:00", "17:00", "20:00", "21:00"], // 前原
+        ["5:54", "6:19", "6:49", "7:34", "7:49", "8:34", "8:49", "9:49", "10:49", "11:49", "12:49", "15:49", "16:49", "19:49", "20:49"]  // 志摩中央公園前
+      ]
+    }
+  ];
+
+  function generateTrips(routeName, stops, timesArray, day) {
+    if (!timesArray || timesArray.length === 0) return [];
+    const numTrips = timesArray[0].length;
+    const trips = [];
+    for (let tripIdx = 0; tripIdx < numTrips; tripIdx++) {
+      const schedule = [];
+      for (let stopIdx = 0; stopIdx < stops.length; stopIdx++) {
+        const timeStr = timesArray[stopIdx][tripIdx];
+        if (timeStr && timeStr !== "-") {
+          schedule.push({
+            stop: stops[stopIdx],
+            time: timeStr,
+            timeMin: timeToMinutes(timeStr)
+          });
+        }
+      }
+      schedule.sort((a, b) => a.timeMin - b.timeMin);
+      trips.push({ route: routeName, day: day, schedule: schedule });
+    }
+    return trips;
+  }
+
+  let allTrips = [];
+
+  routeDefinitions.forEach(route => {
+    if (route.weekdayDown) {
+      allTrips = allTrips.concat(generateTrips(route.shortName, route.stops, route.weekdayDown, "weekday"));
+    }
+    if (route.weekendDown) {
+      allTrips = allTrips.concat(generateTrips(route.shortName, route.stops, route.weekendDown, "weekend"));
+    }
+    if (route.weekdayUp) {
+      allTrips = allTrips.concat(generateTrips(route.shortName, route.stops, route.weekdayUp, "weekday"));
+    }
+    if (route.weekendUp) {
+      allTrips = allTrips.concat(generateTrips(route.shortName, route.stops, route.weekendUp, "weekend"));
+    }
+  });
+
+  const directionSelect = document.getElementById('direction');
+  const searchTimeInput = document.getElementById('search-time');
+  const searchBtn = document.getElementById('search-btn');
+  const resetBtn = document.getElementById('reset-btn');
+  const nowBtn = document.getElementById('now-btn');
+  const resultContainer = document.getElementById('result-container');
+  const resultTitle = document.getElementById('result-title');
+  const resultHead = document.getElementById('result-head');
+  const resultBody = document.getElementById('result-body');
+  const noResultMsg = document.getElementById('no-result-msg');
+  const dayTypeSelect = document.getElementById('day-type');
+
+  // 現在時刻をセットする関数
+  function setNowTime() {
+    const now = new Date();
+    const hh = String(now.getHours()).padStart(2, '0');
+    const mm = String(now.getMinutes()).padStart(2, '0');
+    searchTimeInput.value = `${hh}:${mm}`;
+  }
+
+  function init() {
+    setNowTime(); // 初期化時に現在時刻をセット
+    const now = new Date();
+    if (now.getDay() === 0 || now.getDay() === 6) {
+      dayTypeSelect.value = "weekend";
+    }
+  }
+
+  // 検索条件（行き・帰りのバス停ペア）定義
+  const searchPairs = {
+    "outbound": { // 行き
+      "野北": { start: "前原駅北口", end: "交流プラザ志摩館北口" },
+      "船越": { start: "前原駅北口", end: "初" },
+      "いと": { start: "前原（いと・しま号）", end: "志摩中央公園前" }
+    },
+    "inbound": { // 帰り
+      "野北": { start: "交流プラザ志摩館北口", end: "前原駅北口" },
+      "船越": { start: "初", end: "前原駅北口" },
+      "いと": { start: "志摩中央公園前", end: "前原（いと・しま号）" }
+    }
+  };
+
+  function searchBuses() {
+    const direction = directionSelect.value;
+    const searchTimeStr = searchTimeInput.value;
+    const dayType = dayTypeSelect.value;
+
+    if (!searchTimeStr) {
+      alert("出発時刻を入力してください。");
+      return;
+    }
+
+    const searchMinutes = timeToMinutes(searchTimeStr);
+    let validTrips = [];
+    const pairs = searchPairs[direction];
+
+    allTrips.forEach(trip => {
+      if (trip.day !== dayType) return; 
+      
+      const pair = pairs[trip.route];
+      if (!pair) return;
+
+      const startIndex = trip.schedule.findIndex(s => s.stop === pair.start);
+      const endIndex = trip.schedule.findIndex(s => s.stop === pair.end);
+      
+      if (startIndex !== -1 && endIndex !== -1 && startIndex < endIndex) {
+        const startTimeMin = trip.schedule[startIndex].timeMin;
+        if (startTimeMin >= searchMinutes) {
+          validTrips.push({
+            route: trip.route,
+            startStop: pair.start,
+            startTimeStr: trip.schedule[startIndex].time,
+            startTimeMin: startTimeMin,
+            endStop: pair.end,
+            endTimeStr: trip.schedule[endIndex].time,
+            endTimeMin: trip.schedule[endIndex].timeMin
+          });
+        }
+      }
+    });
+
+    validTrips.sort((a, b) => a.startTimeMin - b.startTimeMin);
+    const topTrips = validTrips.slice(0, 3);
+
+    const dayText = (dayType === "weekday") ? "平日" : "土日祝日";
+    const dirText = (direction === "outbound") ? "行き" : "帰り";
+    resultTitle.textContent = `【${dayText}・${dirText}】の検索結果`;
+    resultContainer.style.display = 'block';
+
+    if (topTrips.length === 0) {
+      resultHead.innerHTML = '';
+      resultBody.innerHTML = '';
+      noResultMsg.style.display = 'block';
+    } else {
+      noResultMsg.style.display = 'none';
+
+      let headHtml = '<tr><th>項目</th>';
+      for (let i = 0; i < topTrips.length; i++) {
+        headHtml += `<th>${i + 1}</th>`;
+      }
+      headHtml += '</tr>';
+      resultHead.innerHTML = headHtml;
+
+      let routeHtml = '<tr><td>路線</td>';
+      topTrips.forEach(trip => {
+        let bgColor = "#007aff"; 
+        let displayName = "野北線";
+        if(trip.route === "船越") {
+          bgColor = "#2ecc71";
+          displayName = "船越線";
+        }
+        if(trip.route === "いと") {
+          bgColor = "#e67e22";
+          displayName = "いとしま号";
+        }
+        routeHtml += `<td><span style="background-color: ${bgColor}; color: white; padding: 4px 8px; border-radius: 4px; font-size: 0.85em; font-weight: bold; display: inline-block;">${displayName}</span></td>`;
+      });
+      routeHtml += '</tr>';
+
+      // 行先番号
+      let routeNumHtml = '<tr><td>行先番号</td>';
+      topTrips.forEach(trip => {
+        let routeNum = "";
+        if (trip.route === "野北") routeNum = "25";
+        if (trip.route === "船越") routeNum = "27";
+        routeNumHtml += `<td><span style="font-weight: bold; font-size: 1.1em; color: #555;">${routeNum}</span></td>`;
+      });
+      routeNumHtml += '</tr>';
+
+      // 乗車バス停と時刻
+      let startHtml = `<tr class="gray-row"><td>乗車</td>`;
+      topTrips.forEach(trip => {
+        let stopName = trip.startStop;
+        if (stopName === "前原（いと・しま号）") stopName = "前原";
+        startHtml += `<td><div style="font-size: 0.75em; color: #555; margin-bottom: 2px;">${stopName}</div><strong style="font-size: 1.1em;">${trip.startTimeStr}</strong></td>`;
+      });
+      startHtml += '</tr>';
+
+      // 降車バス停と時刻
+      let endHtml = `<tr class="gray-row"><td>降車</td>`;
+      topTrips.forEach(trip => {
+        let stopName = trip.endStop;
+        if (stopName === "前原（いと・しま号）") stopName = "前原";
+        endHtml += `<td><div style="font-size: 0.75em; color: #555; margin-bottom: 2px;">${stopName}</div><span style="font-size: 1.05em;">${trip.endTimeStr}</span></td>`;
+      });
+      endHtml += '</tr>';
+
+      // 所要時間の計算と表示
+      let durationHtml = `<tr><td><span style="font-size: 0.9em; color: #555;">所要時間</span></td>`;
+      topTrips.forEach(trip => {
+        const duration = trip.endTimeMin - trip.startTimeMin;
+        durationHtml += `<td><span style="font-size: 0.9em; color: #555;">約 ${duration} 分</span></td>`;
+      });
+      durationHtml += '</tr>';
+
+      resultBody.innerHTML = routeHtml + routeNumHtml + startHtml + endHtml + durationHtml;
+    }
+  }
+
+  searchBtn.addEventListener('click', searchBuses);
+  nowBtn.addEventListener('click', setNowTime);
+
+  resetBtn.addEventListener('click', () => {
+    dayTypeSelect.value = "weekday";
+    directionSelect.value = "outbound";
+    resultContainer.style.display = 'none';
+    
+    setNowTime();
+    
+    const now = new Date();
+    if (now.getDay() === 0 || now.getDay() === 6) {
+      dayTypeSelect.value = "weekend";
+    }
+  });
+
+  init();
+
+</script>
+
+</body>
+</html>

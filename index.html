@@ -3,136 +3,135 @@
 <head>
   <meta charset="UTF-8">
   <link rel="apple-touch-icon" href="https://warasuu.github.io/maruwitobus/まるゐとアプリアイコン.png?v=2">
-  </head>
+  
+  <!-- アプリのように全画面表示するための設定を追加 -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#f4f7f6">
 
-<!-- アプリのように全画面表示するための設定を追加 -->
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="theme-color" content="#f4f7f6">
+  <title>まるゐとバス時刻表</title>
+  <style>
+    /* 全体のデザイン設定 */
+    body {
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+      background-color: #f4f7f6;
+      margin: 0;
+      padding: 16px;
+      padding-top: env(safe-area-inset-top, 16px); /* iPhoneのノッチ対応 */
+      color: #333;
+    }
+    h1 {
+      font-size: 1.3rem;
+      text-align: center;
+      color: #2c3e50;
+      margin-bottom: 20px;
+    }
 
-<title>まるゐとバス時刻表</title>
-<style>
-  /* 全体のデザイン設定 */
-  body {
-    font-family: 'Helvetica Neue', Arial, sans-serif;
-    background-color: #f4f7f6;
-    margin: 0;
-    padding: 16px;
-    padding-top: env(safe-area-inset-top, 16px); /* iPhoneのノッチ対応 */
-    color: #333;
-  }
-  h1 {
-    font-size: 1.3rem;
-    text-align: center;
-    color: #2c3e50;
-    margin-bottom: 20px;
-  }
+    /* 検索パネル（絞り込み機能）のデザイン */
+    .search-panel {
+      background: #fff;
+      padding: 16px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .input-group {
+      display: flex;
+      flex-direction: column;
+    }
+    label {
+      font-size: 0.9rem;
+      font-weight: bold;
+      color: #555;
+      margin-bottom: 6px;
+    }
+    select, input[type="time"] {
+      padding: 12px;
+      font-size: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      background-color: #fafafa;
+      outline: none;
+      -webkit-appearance: none;
+      font-family: inherit;
+    }
+    select:focus, input[type="time"]:focus {
+      border-color: #007aff;
+      background-color: #fff;
+    }
+    button {
+      padding: 12px;
+      font-size: 1rem;
+      font-weight: bold;
+      color: #007aff;
+      background-color: transparent;
+      border: 1px solid #007aff;
+      border-radius: 6px;
+      cursor: pointer;
+      margin-top: 4px;
+      transition: background-color 0.2s;
+    }
+    button:hover {
+      background-color: #f0f8ff;
+    }
 
-  /* 検索パネル（絞り込み機能）のデザイン */
-  .search-panel {
-    background: #fff;
-    padding: 16px;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    margin-bottom: 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-  }
-  .input-group {
-    display: flex;
-    flex-direction: column;
-  }
-  label {
-    font-size: 0.9rem;
-    font-weight: bold;
-    color: #555;
-    margin-bottom: 6px;
-  }
-  select, input[type="time"] {
-    padding: 12px;
-    font-size: 1rem;
-    border: 1px solid #ccc;
-    border-radius: 6px;
-    background-color: #fafafa;
-    outline: none;
-    -webkit-appearance: none;
-    font-family: inherit;
-  }
-  select:focus, input[type="time"]:focus {
-    border-color: #007aff;
-    background-color: #fff;
-  }
-  button {
-    padding: 12px;
-    font-size: 1rem;
-    font-weight: bold;
-    color: #007aff;
-    background-color: transparent;
-    border: 1px solid #007aff;
-    border-radius: 6px;
-    cursor: pointer;
-    margin-top: 4px;
-    transition: background-color 0.2s;
-  }
-  button:hover {
-    background-color: #f0f8ff;
-  }
+    .time-input-wrapper {
+      display: flex;
+      gap: 8px;
+    }
+    #search-time {
+      flex: 1;
+    }
+    #now-btn {
+      margin-top: 0;
+      padding: 0 16px;
+      font-size: 0.9rem;
+    }
 
-  .time-input-wrapper {
-    display: flex;
-    gap: 8px;
-  }
-  #search-time {
-    flex: 1;
-  }
-  #now-btn {
-    margin-top: 0;
-    padding: 0 16px;
-    font-size: 0.9rem;
-  }
-
-  /* 表を横スクロール可能にする枠 */
-  .table-container {
-    overflow-x: auto;
-    background: #fff;
-    border-radius: 8px;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-  }
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    min-width: 500px;
-  }
-  th, td {
-    padding: 14px 12px;
-    text-align: center;
-    border-bottom: 1px solid #eeeeee;
-    font-size: 1.05rem; 
-  }
-  th {
-    background-color: #007aff;
-    color: white;
-    white-space: nowrap;
-  }
-  td:first-child {
-    text-align: left;
-    font-weight: bold;
-    background-color: #f2f2f2; /* 薄いグレイに変更 */
-    position: sticky;
-    left: 0;
-    border-right: 2px solid #e0e0e0;
-    z-index: 1;
-  }
-  .gray-row td {
-    background-color: #f2f2f2;
-  }
-  tr:hover td {
-    background-color: #f1f8ff !important;
-  }
-</style>
+    /* 表を横スクロール可能にする枠 */
+    .table-container {
+      overflow-x: auto;
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 500px;
+    }
+    th, td {
+      padding: 14px 12px;
+      text-align: center;
+      border-bottom: 1px solid #eeeeee;
+      font-size: 1.05rem; 
+    }
+    th {
+      background-color: #007aff;
+      color: white;
+      white-space: nowrap;
+    }
+    td:first-child {
+      text-align: left;
+      font-weight: bold;
+      background-color: #f2f2f2;
+      position: sticky;
+      left: 0;
+      border-right: 2px solid #e0e0e0;
+      z-index: 1;
+    }
+    .gray-row td {
+      background-color: #f2f2f2;
+    }
+    tr:hover td {
+      background-color: #f1f8ff !important;
+    }
+  </style>
 </head>
 <body>
 
@@ -156,7 +155,13 @@
   </div>
   
   <div class="input-group">
-    <label for="search-time">出発時刻</label>
+    <label for="search-time">時刻条件</label>
+    <div class="time-input-wrapper" style="margin-bottom: 8px;">
+      <select id="time-type" style="flex: 1;">
+        <option value="departure">出発時刻から検索</option>
+        <option value="arrival">到着時刻から検索</option>
+      </select>
+    </div>
     <div class="time-input-wrapper">
       <input type="time" id="search-time">
       <button type="button" id="now-btn">現在時刻</button>
@@ -292,6 +297,7 @@
 
   const directionSelect = document.getElementById('direction');
   const searchTimeInput = document.getElementById('search-time');
+  const timeTypeSelect = document.getElementById('time-type');
   const searchBtn = document.getElementById('search-btn');
   const resetBtn = document.getElementById('reset-btn');
   const nowBtn = document.getElementById('now-btn');
@@ -336,9 +342,10 @@
     const direction = directionSelect.value;
     const searchTimeStr = searchTimeInput.value;
     const dayType = dayTypeSelect.value;
+    const timeType = timeTypeSelect.value;
 
     if (!searchTimeStr) {
-      alert("出発時刻を入力してください。");
+      alert("時刻を入力してください。");
       return;
     }
 
@@ -357,22 +364,49 @@
       
       if (startIndex !== -1 && endIndex !== -1 && startIndex < endIndex) {
         const startTimeMin = trip.schedule[startIndex].timeMin;
-        if (startTimeMin >= searchMinutes) {
-          validTrips.push({
-            route: trip.route,
-            startStop: pair.start,
-            startTimeStr: trip.schedule[startIndex].time,
-            startTimeMin: startTimeMin,
-            endStop: pair.end,
-            endTimeStr: trip.schedule[endIndex].time,
-            endTimeMin: trip.schedule[endIndex].timeMin
-          });
+        const endTimeMin = trip.schedule[endIndex].timeMin;
+
+        if (timeType === "departure") {
+          // 出発時刻検索: 指定時刻「以降」に出発するバス
+          if (startTimeMin >= searchMinutes) {
+            validTrips.push({
+              route: trip.route,
+              startStop: pair.start,
+              startTimeStr: trip.schedule[startIndex].time,
+              startTimeMin: startTimeMin,
+              endStop: pair.end,
+              endTimeStr: trip.schedule[endIndex].time,
+              endTimeMin: endTimeMin
+            });
+          }
+        } else {
+          // 到着時刻検索: 指定時刻「以前」に到着するバス
+          if (endTimeMin <= searchMinutes) {
+            validTrips.push({
+              route: trip.route,
+              startStop: pair.start,
+              startTimeStr: trip.schedule[startIndex].time,
+              startTimeMin: startTimeMin,
+              endStop: pair.end,
+              endTimeStr: trip.schedule[endIndex].time,
+              endTimeMin: endTimeMin
+            });
+          }
         }
       }
     });
 
-    validTrips.sort((a, b) => a.startTimeMin - b.startTimeMin);
-    const topTrips = validTrips.slice(0, 3);
+    let topTrips = [];
+    if (timeType === "departure") {
+      // 出発が早い順にソートし、上位3件を取得
+      validTrips.sort((a, b) => a.startTimeMin - b.startTimeMin);
+      topTrips = validTrips.slice(0, 3);
+    } else {
+      // 指定時間に間に合う中で直近のもの（到着が遅い順）にソートし、上位3件を取得
+      validTrips.sort((a, b) => b.endTimeMin - a.endTimeMin);
+      topTrips = validTrips.slice(0, 3);
+      // 到着時刻検索の場合は、指定時刻に近い順（到着が遅い順）のまま表示する
+    }
 
     const dayText = (dayType === "weekday") ? "平日" : "土日祝日";
     const dirText = (direction === "outbound") ? "行き" : "帰り";
@@ -382,6 +416,11 @@
     if (topTrips.length === 0) {
       resultHead.innerHTML = '';
       resultBody.innerHTML = '';
+      if (timeType === "departure") {
+        noResultMsg.textContent = "指定した時間以降に出発するバスは本日はもうありません。";
+      } else {
+        noResultMsg.textContent = "指定した時間に間に合う到着バスは本日はありません。";
+      }
       noResultMsg.style.display = 'block';
     } else {
       noResultMsg.style.display = 'none';
@@ -455,6 +494,7 @@
   resetBtn.addEventListener('click', () => {
     dayTypeSelect.value = "weekday";
     directionSelect.value = "outbound";
+    timeTypeSelect.value = "departure"; // 検索タイプもリセット
     resultContainer.style.display = 'none';
     
     setNowTime();
